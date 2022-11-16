@@ -2,12 +2,12 @@ CC = c++
 CFLAGS = -Wall -g
 FLAGS = -Wall -g
 LIBS = -lm
-OBJS = SCPv.o skcp.o
+OBJS = SCPv.o skcp_main.o
 
 
 mmas_ml: $(OBJS)
-	$(CC) $(FLAGS) -o skcp $(OBJS) $(LIBS)
+	$(CC) $(FLAGS) -o skcp_main $(OBJS) $(LIBS)
 .cpp.o:
 	$(CC) $(CFLAGS) -c $<
 clean:
-	/bin/rm -rf *.o *~ skcp $(OBJS) $(TARGET)
+	/bin/rm -rf *.o *~ skcp_main $(OBJS) $(TARGET)
