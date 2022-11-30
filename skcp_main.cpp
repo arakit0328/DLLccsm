@@ -160,46 +160,58 @@ void random_permutation(vector<int>& A, Rand& rnd)
 
 void add_update_score(SCPinstance& inst, SCPsolution& cs, int c)
 {
-  SCORE[c] = -SCORE[c];
+  SCORE[c] = 0;
 
   for (int r : inst.ColEntries[c])  {
     // r行が初めてカバーされたら，rを含む行のスコアを減少
     if (cs.COVERED[r] == cs.K) {
       for (int rc : inst.RowCovers[r]) {
-	if (rc != c) SCORE[rc] -= COST[r];
+        SCORE[rc] -= COST[r];
       } // End: for rc
     } // End if covered[r] == K
 
-      // r行がK+1回カバーされたら，rを含むCSの要素のスコアを増加
-    if (cs.COVERED[r] == cs.K+1) {
+    // r行がK+1回カバーされたら，rを含むCSの要素のスコアを増加
+    if (cs.COVERED[r] == cs.K + 1) {
       for (int rc : inst.RowCovers[r]) {
-	if (cs.SOLUTION[rc]) {
+	if (cs.SOLUTION[rc] && rc != c) {
 	  SCORE[rc] += COST[r];
+          if (cs.SOLUTION[rc] && SCORE[rc] > 0) printf("\n%3zu: %d is in CS but SCORE[%d] = %d\n", cs.CS.size(), rc, rc, SCORE[rc]);
 	}
       }
     } // End if covered[r] == K+1
   } // end for r
 }
 
+
 void remove_update_score(SCPinstance& inst, SCPsolution& cs, int c)
 {
-  SCORE[c] = -SCORE[c];
+  SCORE[c] = 0;
+  for (int r : inst.ColEntries[c])  {
+    if (cs.COVERED[r] < cs.K) SCORE[c] += COST[r];
+  }
 
   for (int r : inst.ColEntries[c])  {
     // r行がK回カバーされなくなったら，rを含む行のスコアを増加
     if (cs.COVERED[r] == cs.K-1) {
 	for (int rc : inst.RowCovers[r]) {
-	  if (rc != c && cs.SOLUTION[rc] == 0) SCORE[rc] += COST[r];
+	  if (rc != c && cs.SOLUTION[rc] == 0)
+          {
+            SCORE[rc] += COST[r];
+            if (cs.SOLUTION[rc] == 0 && SCORE[rc] < 0) printf("\n%3zu: %d is not in CS but SCORE[%d] = %d\n", cs.CS.size(), rc, rc, SCORE[rc]);
+          }
 	} // End: for rc
       } // End if covered[r] == K-1
 
-      // r行がK回カバーされたら，rを含むCSの列のスコアが減る
-      if (cs.COVERED[r] == cs.K) {
-	for (int rc : inst.RowCovers[r]) {
-	  if (cs.SOLUTION[rc]) SCORE[rc] -= COST[r];
-	}
-      } // End if covered[r] == K
-    } // end for r
+    // r行がK回カバーされたら，rを含むCSの列のスコアが減る
+    if (cs.COVERED[r] == cs.K) {
+      for (int rc : inst.RowCovers[r]) {
+        if (cs.SOLUTION[rc])
+        {
+          SCORE[rc] -= COST[r];
+          if (cs.SOLUTION[rc] == 0 && SCORE[rc] < 0) printf("\n%3zu: %d is not in CS but SCORE[%d] = %d\n", cs.CS.size(), rc, rc, SCORE[rc]);          }
+      }
+    } // End if covered[r] == K
+  } // end for r
 } // end remove_update_score
 
 
@@ -215,11 +227,12 @@ void update_SKCC(SCPinstance& inst, int col)
 
 // 貪欲法：スコア最大の列をK列選ぶ
 // 引数の cs に結果が入る
-void greedy_construction(SCPinstance &inst,
-                         SCPsolution &cs,
-                         Rand &rnd)
+SCPsolution greedy_construction(SCPinstance &inst,
+                                int k,
+                                Rand &rnd)
 {
   int maxc;
+  SCPsolution cs(inst, k);
 
   cs.initialize(inst);
   while (cs.num_Cover < inst.numRows)
@@ -231,6 +244,7 @@ void greedy_construction(SCPinstance &inst,
     add_update_score(inst, cs, maxc);
     // End update score
   } // End while num_Cover
+  return cs;
 }
 
 
@@ -243,8 +257,14 @@ SCPsolution DLL_com(SCPinstance& inst, int k, Rand& rnd)
     SCORE[j] = inst.ColEntries[j].size();
   }
 
-  greedy_construction(inst, CS, rnd);
+  CS = greedy_construction(inst, k, rnd);
   CSbest = CS;
+
+  for (int c = 0; c < inst.numColumns; c++)
+  {
+    if (CS.SOLUTION[c] && SCORE[c] > 0) printf("\n%3zu: %d is in CS but SCORE[%d] = %d\n", CS.CS.size(), c, c, SCORE[c]);
+    if (CS.SOLUTION[c] == 0 && SCORE[c] < 0) printf("\n%3zu: %d is not in CS but SCORE[%d] = %d\n", CS.CS.size(), c, c, SCORE[c]);
+  }
 
   int remove_col;
 
@@ -291,10 +311,12 @@ SCPsolution DLL_com(SCPinstance& inst, int k, Rand& rnd)
     while (CS.num_Cover < inst.numRows) {
       add_col = get_add_rule(inst, CS, rnd);
       CS.add_column(inst, add_col);
+      cout << " Add " << add_col << " ";
 
       // 追加した結果が悪い解ならやめてやり直す
       if (CS.totalWeight >= CSbest.totalWeight) {
 	CS.remove_column(inst, add_col);
+        cout << " Break ";
 	break;
       }
 
@@ -306,13 +328,16 @@ SCPsolution DLL_com(SCPinstance& inst, int k, Rand& rnd)
 
       // update COST and SCORE
       for (int r = 0; r < inst.numRows; r++) {
-	if (CS.COVERED[r] == 0) {
+	if (CS.COVERED[r] < CS.K) {
 	  COST[r]++;
-	  for (int rc : inst.RowCovers[r])  SCORE[rc]++;
+	  for (int rc : inst.RowCovers[r])
+          {
+            if (CS.SOLUTION[rc]) SCORE[rc]--;
+            else SCORE[rc]++;
+          }
 	}
       }
     } // end while
-
 
     cout << endl;
   } // End iter
