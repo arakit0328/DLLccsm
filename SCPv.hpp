@@ -9,6 +9,7 @@
 
 #include "Random.hpp"
 #include <vector>
+#include <string>
 #include <cstdio>
 
 //
@@ -24,7 +25,7 @@ public:
   double  Density;             // The density of the matrix
 
 public:
-  SCPinstance(FILE *SourceFile);
+  SCPinstance(std::string SourceFile);
   ~SCPinstance() {}
 
   std::vector<std::vector<int> > RowCovers;	// 行をカバーする列のリスト
@@ -49,7 +50,7 @@ public:
   int nCol;                     // 列数
   int K;                        // カバーする数
   int     totalWeight;
-  
+
   std::vector<int> CS;                   // CS: 候補解（列番号のリスト）
   std::vector<int> SOLUTION;             // SOLUTION[j] = 1: 列jが候補解に含まれる
   std::vector<int> COVERED;              // COVERED[i]: 行iがカバーされている回数

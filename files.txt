@@ -1,0 +1,23 @@
+21
+10
+scp41.txt 2 50000
+scp45.txt 2 50000
+scp51.txt 2 50000
+scpa1.txt 2 100000
+scpb1.txt 2 100000
+scpc1.txt 2 100000
+scp41.txt 7 50000
+scp45.txt 7 50000
+scp51.txt 13 50000
+scpa1.txt 21 100000
+scpb1.txt 61 100000
+scpc1.txt 30 100000
+scp41.txt 11 50000
+scp45.txt 11 50000
+scp51.txt 24 50000
+scpa1.txt 40 100000
+scpb1.txt 119 100000
+scpc1.txt 58 100000
+scpnrg1.txt 2 500000
+scpnrg1.txt 78 500000
+scpnrg1.txt 153 500000

@@ -1,6 +1,6 @@
 CC = c++
-CFLAGS = -Wall -g
-FLAGS = -Wall -g
+CFLAGS = -Wall # -g
+FLAGS = -Wall -O2
 LIBS = -lm
 OBJS = SCPv.o skcp_main.o
 
